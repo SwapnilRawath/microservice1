@@ -3,9 +3,8 @@ node {
     withMaven(maven:'maven') {
 
         stage('Checkout') {
-            git url: 'https://github.com/habsh/microservice1.git', credentialsId: 'habsh', branch: 'master'
+            git url: 'https://github.com/SwapnilRawath/microservice1.git', credentialsId: 'githubnew', branch: 'master'
         }
-
         stage('Build') {
             sh 'mvn clean install'
 
@@ -13,20 +12,24 @@ node {
             print pom.version
             env.version = pom.version
         }
-
-        stage('Image') {
+		stage('Image') {
             dir ('customer-service') {
-                def app = docker.build "localhost:5000/customer-service:${env.version}"
-                app.push()
+                def app = docker.build "rawath0408/customer-service:${env.version}"
+				docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+					app.push()
+					}
             }
         }
 
         stage ('Run') {
             docker.image("localhost:5000/customer-service:${env.version}").run('-p 3333:3333 -h customer --name customer --link discovery --link account')
+            //docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
+			docker.image("rawath0408/customer-service:${env.version}").run('-p 3333:3333 -h customer --name customer --link discovery --link account')
+			//} //--link discovery'
         }
 
         stage ('Final') {
-            build job: 'gateway-service-pipeline', wait: false
+           // build job: 'gateway-service-pipeline', wait: false
         }      
 
     }
